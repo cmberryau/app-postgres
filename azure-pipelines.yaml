@@ -1,0 +1,52 @@
+# expected variables:
+
+# azureSubscriptionEndpoint - service connection name
+# azureContainerRegistry - azure container registry hostname
+
+trigger:
+- master
+
+variables:
+  # vm for all jobs
+  vmImageName: 'Ubuntu-16.04'
+  imageName: app-postgres
+
+stages:
+  # build stage handles building images and testing images
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: Build
+        displayName: Build and test images
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          # build our images
+          - task: DockerCompose@0
+            displayName: Build images
+            inputs:
+              action: Run a Docker Compose command
+              azureSubscriptionEndpoint: $(azureSubscriptionEndpoint)
+              azureContainerRegistry: $(azureContainerRegistry)
+              dockerComposeFile: docker-compose.yaml
+              projectName: $(Build.Repository.Name)
+              qualifyImageNames: true
+              additionalImageTags: $(Build.SourceVersion)
+              dockerComposeCommand: build
+
+          # tag our images
+          - script: |
+              docker tag $(azureContainerRegistry)/$(imageName) $(azureContainerRegistry)/$(imageName):$(Build.SourceVersion)
+            displayName: Tag images
+
+          # push our built images
+          - task: DockerCompose@0
+            displayName: Push images
+            inputs:
+              action: Push services
+              azureSubscriptionEndpoint: $(azureSubscriptionEndpoint)
+              azureContainerRegistry: $(azureContainerRegistry)
+              dockerComposeFile: docker-compose.yaml
+              projectName: $(Build.Repository.Name)
+              qualifyImageNames: true
+              additionalImageTags: $(Build.SourceVersion)
