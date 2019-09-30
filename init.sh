@@ -20,8 +20,3 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE "$APP_DATABASE_NAME";
     GRANT ALL PRIVILEGES ON DATABASE "$APP_DATABASE_NAME" TO "$APP_DATABASE_USER";
 EOSQL
-
-# create the trigram extension on app db
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_DATABASE_NAME" <<-EOSQL
-    CREATE EXTENSION pg_trgm;
-EOSQL
